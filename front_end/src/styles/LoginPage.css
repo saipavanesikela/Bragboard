@@ -1,0 +1,47 @@
+.login-page-container {
+  @apply flex items-center justify-center min-h-screen bg-slate-100;
+}
+
+.login-card {
+  @apply w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg;
+}
+
+.login-header {
+  @apply text-center;
+}
+
+.login-title {
+  @apply text-3xl font-bold text-slate-800;
+}
+
+.login-subtitle {
+  @apply mt-2 text-slate-500;
+}
+
+.login-form {
+  @apply space-y-6;
+}
+
+.input-group {
+  @apply relative;
+}
+
+.input-icon {
+  @apply absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none h-5 w-5 text-slate-400;
+}
+
+.form-input {
+  @apply w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-violet focus:border-transparent transition;
+}
+
+.submit-button {
+  @apply w-full py-3 font-bold text-white bg-brand-violet rounded-lg hover:bg-brand-violet-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-violet transition-all duration-300;
+}
+
+.signup-link-container {
+  @apply text-center text-sm text-slate-500;
+}
+
+.signup-link {
+  @apply font-semibold text-brand-violet hover:underline;
+}
