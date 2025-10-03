@@ -13,7 +13,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String(60), nullable=False)
     department = Column(String, nullable=True)
     role = Column(Enum(UserRole), default=UserRole.employee, nullable=False)
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
