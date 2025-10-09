@@ -2,66 +2,79 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { loginUser } from '../api/apiService.js';
+import '../styles/SharedStyles.css';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
     try {
-      // 1. Try to log in by calling the backend API
       const data = await loginUser(email, password);
-
-      // 2. If successful, save the token from the backend
       login(data.access_token);
-
-      // 3. Give a "correct details" pop-up ✅
-      alert('Login Successful! Welcome back.');
-
-      // 4. Redirect to the homepage
-      navigate('/');
-
+      alert('Login Successful!');
+      navigate('/dashboard');
     } catch (err) {
-      // 5. If login fails, give a "wrong details" pop-up ❌
+      setError(err.message || 'Login failed.');
       alert('Login Failed: Incorrect email or password.');
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-100">
-      <div className="p-8 bg-white rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label>Email</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-              className="w-full p-2 border rounded" 
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h1 className="auth-title">Sign In</h1>
+          <p className="auth-subtitle">Welcome back to BragBoard</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && <div className="p-3 text-red-800 bg-red-100 rounded-lg">{error}</div>}
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">Email Address / Username</label>
+            <input
+              id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="form-input" placeholder="you@company.com" 
             />
           </div>
-          <div>
-            <label>Password</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-              className="w-full p-2 border rounded" 
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">Password</label>
+            <input
+              id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
+              className="form-input" placeholder="••••••••"
             />
           </div>
-          <button type="submit" className="w-full p-2 text-white bg-blue-600 rounded hover:bg-blue-700">
+          
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                id="rememberMe" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              />
+              <label htmlFor="rememberMe" className="text-slate-600">Remember me</label>
+            </div>
+            <Link to="/forgot-password" className="font-semibold text-violet-600 hover:underline">
+              
+            </Link>
+          </div>
+
+          <button type="submit" className="auth-button">
             Sign In
           </button>
         </form>
-        <p className="mt-4 text-center">
-          New user? <Link to="/register" className="text-blue-600">Sign up</Link>
-        </p>
+        <div className="auth-link-container">
+          Don't have an account?{' '}
+          <Link to="/register" className="auth-link">Create one</Link>
+        </div>
       </div>
     </div>
   );
