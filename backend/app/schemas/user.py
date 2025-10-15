@@ -9,11 +9,7 @@ class UserRole(str, enum.Enum):
     admin = "admin"
 
 # Schema for receiving user registration data
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    department: Optional[str] = None
+
 
 # Schema for returning user data to the client (without the password)
 class UserOut(BaseModel):
@@ -24,5 +20,11 @@ class UserOut(BaseModel):
     role: UserRole # 3. Use the UserRole Enum as the type
     joined_at: datetime
 
-    class Config:
+    class  Config:
         from_attributes = True
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    department: Optional[str] = None
+    role: Optional[str] = "employee" # Add this line

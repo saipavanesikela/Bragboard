@@ -4,7 +4,8 @@ from sqlalchemy.orm import sessionmaker
 # --- IMPORTANT ---
 # Replace the placeholder values below with your actual PostgreSQL connection details.
 # Format: "postgresql://USERNAME:PASSWORD@HOST/DATABASE_NAME"
-DATABASE_URL = "postgresql://postgres:Saipavan%40123@db.wjauqzauknqlgcxrwwci.supabase.co:5432/postgres"
+# The format is "postgresql://USERNAME:PASSWORD@HOST/DATABASE_NAME"
+DATABASE_URL = "postgresql://postgres:saipavan@localhost/bragboard"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
