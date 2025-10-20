@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { loginUser } from '../api/apiService.js';
+import { loginUser, getCurrentUser } from '../api/apiService.js';
 import '../styles/LoginPage.css'; // Import the new stylesheet
 
 function LoginPage() {
@@ -26,14 +26,36 @@ function LoginPage() {
 
       // Pass the single 'credentials' object
       const response = await loginUser(credentials);
-      
+
       // The token is on 'response.data'
-      login(response.data.access_token); 
-      navigate('/dashboard');
+      const token = response.data.access_token;
+      login(token);
+
+      // Verify token by fetching current user before navigating.
+      // If this fails we'll surface the exact 401 error.
+      try {
+        const me = await getCurrentUser();
+        // Optional: you can use me.data for any UI updates. Proceed to dashboard.
+        navigate('/dashboard');
+      } catch (meErr) {
+        // If fetching current user fails, remove token and show detailed error
+        console.error('Token verification failed after login:', meErr?.response || meErr);
+        alert('Login failed: token verification failed. Check server logs.');
+        // logout by removing token from localStorage via AuthContext's logout if available
+        // (we only have login here) — remove token directly to avoid stale auth state
+        localStorage.removeItem('token');
+      }
       
     } catch (err) {
-      console.error("Login failed:", err); // Log the full error
-      alert('Login Failed: Incorrect email or password.');
+      // axios error objects include `response` with status & data. Print that for diagnostics.
+      console.error('Login request failed:', err?.response ?? err);
+      const status = err?.response?.status;
+      const data = err?.response?.data;
+      if (status === 401) {
+        alert('Login Failed: Incorrect email or password (401).');
+      } else {
+        alert(`Login Failed: ${status ?? 'network error'}`);
+      }
     }
   };
 

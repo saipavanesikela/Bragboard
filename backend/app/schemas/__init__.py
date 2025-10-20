@@ -3,5 +3,5 @@
 
 from .token import Token, TokenData  # <-- This line is now fixed
 from .user import User, UserCreate, UserOut
-from .shoutout import Shoutout, ShoutoutBase, ShoutoutCreate
+from .shoutout import Shoutout, ShoutoutCreate
 from .analytics import LeaderboardEntry, DepartmentHighlight, AdminInsights

@@ -4,10 +4,9 @@ import { registerUser } from '../api/apiService.js';
 import '../styles/RegisterStyles.css';
 
 function RegisterPage() {
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState(''); // Use fullName to match backend
   const [email, setEmail] = useState('');
   const [department, setDepartment] = useState('');
-  // const [role, setRole] = useState('employee'); // <-- 1. REMOVED role state
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
@@ -21,6 +20,7 @@ function RegisterPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('RegisterPage mounted');
     setPasswordValidation({
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),
@@ -31,6 +31,20 @@ function RegisterPage() {
   const passwordsMatch = password && password === confirmPassword;
   const isPasswordValid = passwordValidation.length && passwordValidation.uppercase && passwordValidation.number;
 
+  const doRegister = async (userData) => {
+    try {
+      console.log('doRegister called with', userData);
+      await registerUser(userData);
+      console.log('Registration succeeded');
+      alert('Account created successfully! Please sign in.');
+      navigate('/login');
+    } catch (err) {
+      console.error('Registration error:', err?.response ?? err);
+      const backendMsg = err?.response?.data?.detail || err?.response?.data || null;
+      setError(backendMsg || 'Registration failed. Please try again.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!passwordsMatch || !isPasswordValid) {
@@ -38,27 +52,18 @@ function RegisterPage() {
       return;
     }
     setError(null);
-    try {
-      // 2. --- THIS IS THE FIX ---
-      // We create a new object that matches the backend UserCreate schema
-      const userData = {
-        full_name: name, // Map 'name' to 'full_name'
-        email: email,
-        password: password,
-        department: department
-        // We no longer send 'role'
-      };
-      
-      // Pass the correctly structured userData object
-      await registerUser(userData);
-      // --------------------------
-
-      alert('Account created successfully! Please sign in.');
-      navigate('/login');
-    } catch (err) {
-      console.error("Registration failed:", err);
-      setError(err.message || 'Registration failed. Please try again.');
+    console.log('Register submit:', { fullName, email, department });
+    if (!fullName.trim() || !email.trim() || !department) {
+      setError('Please fill all required fields.');
+      return;
     }
+    const userData = {
+      full_name: fullName,
+      email,
+      password,
+      department,
+    };
+    await doRegister(userData);
   };
 
   const StrengthCheck = ({ text, isValid }) => (
@@ -82,7 +87,7 @@ function RegisterPage() {
           <div className="form-group">
             <div className="input-wrapper">
               <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-              <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="form-input" placeholder="Full Name" />
+              <input id="name" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="form-input" placeholder="Full Name" />
             </div>
           </div>
 
@@ -106,8 +111,6 @@ function RegisterPage() {
             </div>
           </div>
 
-          {/* 3. REMOVED the 'role' dropdown */}
-          
           <div className="form-group">
             <div className="input-wrapper">
               <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
@@ -130,6 +133,24 @@ function RegisterPage() {
           <button type="submit" className="register-button" disabled={!passwordsMatch || !isPasswordValid}>
             Create Account
           </button>
+          {process.env.NODE_ENV !== 'production' && (
+            <button
+              type="button"
+              style={{ marginLeft: '1rem' }}
+              onClick={() => {
+                console.log('Dev debug register clicked');
+                const userData = {
+                  full_name: fullName,
+                  email,
+                  password,
+                  department,
+                };
+                doRegister(userData);
+              }}
+            >
+              Dev: Force Register
+            </button>
+          )}
         </form>
         <div className="register-link-container">
           Already have an account?{' '}
