@@ -1,3 +1,6 @@
+// In: front_end/src/pages/LoginPage.jsx
+// (REPLACE the entire file with this)
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.jsx';
@@ -13,11 +16,23 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await loginUser(email, password);
-      login(data.access_token);
-      alert('Login Successful!');
+      // --- THIS IS THE FIX ---
+      // We must pass a single object that maps 'email' to 'username'
+      // so the backend's OAuth2PasswordRequestForm receives what it expects.
+      const credentials = {
+        username: email,
+        password: password
+      };
+
+      // Pass the single 'credentials' object
+      const response = await loginUser(credentials);
+      
+      // The token is on 'response.data'
+      login(response.data.access_token); 
       navigate('/dashboard');
+      
     } catch (err) {
+      console.error("Login failed:", err); // Log the full error
       alert('Login Failed: Incorrect email or password.');
     }
   };

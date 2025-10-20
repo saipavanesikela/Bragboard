@@ -1,19 +1,28 @@
-from sqlalchemy import Column, Integer, String, Enum, DateTime
-from sqlalchemy.sql import func
-from app.db.base import Base
-import enum
+# In: backend/app/models/user.py
 
-class UserRole(str, enum.Enum):
-    employee = "employee"
-    admin = "admin"
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
+from app.db.base import Base
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
+    full_name = Column(String, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String(60), nullable=False)
-    department = Column(String, nullable=True)
-    role = Column(Enum(UserRole), default=UserRole.employee, nullable=False)
-    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+    department = Column(String, index=True, nullable=True)
+    hashed_password = Column(String, nullable=False)
+    is_active = Column(Boolean(), default=True)
+    is_superuser = Column(Boolean(), default=False)
+
+    # Relationships
+    shoutouts_sent = relationship(
+        "Shoutout",
+        back_populates="sender",
+        foreign_keys="[Shoutout.sender_id]"
+    )
+    shoutouts_received = relationship(
+        "Shoutout",
+        secondary="shoutout_recipients",
+        back_populates="recipients"
+    )

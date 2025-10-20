@@ -7,7 +7,7 @@ function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [department, setDepartment] = useState('');
-  const [role, setRole] = useState('employee');
+  // const [role, setRole] = useState('employee'); // <-- 1. REMOVED role state
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
@@ -39,10 +39,24 @@ function RegisterPage() {
     }
     setError(null);
     try {
-      await registerUser({ name, email, password, department, role });
+      // 2. --- THIS IS THE FIX ---
+      // We create a new object that matches the backend UserCreate schema
+      const userData = {
+        full_name: name, // Map 'name' to 'full_name'
+        email: email,
+        password: password,
+        department: department
+        // We no longer send 'role'
+      };
+      
+      // Pass the correctly structured userData object
+      await registerUser(userData);
+      // --------------------------
+
       alert('Account created successfully! Please sign in.');
       navigate('/login');
     } catch (err) {
+      console.error("Registration failed:", err);
       setError(err.message || 'Registration failed. Please try again.');
     }
   };
@@ -92,23 +106,13 @@ function RegisterPage() {
             </div>
           </div>
 
-          <div className="form-group">
-            <div className="input-wrapper">
-              <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962c.51.056 1.02.083 1.531.083s1.02-.027 1.531-.083m-3.062 0c.205.022.41.033.618.033s.413-.011.618-.033m-4.244 5.042a2.122 2.122 0 013.258-2.062M15.828 17.155a2.122 2.122 0 01-3.258 2.062m-5.334-2.062a2.122 2.122 0 003.258-2.062" /></svg>
-              <select id="role" value={role} onChange={(e) => setRole(e.target.value)} required className="form-input" style={{paddingLeft: '3.5rem'}}>
-                <option value="employee">Employee</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
-
-          {/* THIS IS THE CORRECTED PASSWORD SECTION */}
+          {/* 3. REMOVED the 'role' dropdown */}
+          
           <div className="form-group">
             <div className="input-wrapper">
               <svg className="input-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
               <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="form-input" placeholder="Password" />
             </div>
-            {/* The strength meter is now outside the icon's container */}
             <div className="password-strength-meter">
               <StrengthCheck text="At least 8 characters" isValid={passwordValidation.length} />
               <StrengthCheck text="At least one uppercase letter" isValid={passwordValidation.uppercase} />

@@ -1,117 +1,250 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Avatar, AvatarFallback } from '../components/ui/Avatar';
+import { Tabs, TabsContent } from '../components/ui/Tabs';
+import { BarChart3, MessageCircle, LogOut, Settings, User, PlusSquare } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext.jsx';
+import { useNavigate } from 'react-router-dom';
 
-// The styles are now loaded from the separate DashboardPage.css file via index.css
+// Import API functions
+import { 
+  getShoutouts, 
+  getLeaderboard, 
+  getDepartmentHighlights, 
+  getAdminInsights 
+} from '../api/apiService';
 
-function DashboardPage() {
-  const initialFeedItems = [
-    { id: 1, sender: { name: 'Jane Doe', initials: 'JD' }, message: 'Huge thanks to John for helping out with the deployment last night. Lifesaver! 🙌', timestamp: '2 hours ago' },
-    { id: 2, sender: { name: 'John Smith', initials: 'JS' }, message: 'Shout-out to the entire design team for the amazing new mockups. They look fantastic!', timestamp: '5 hours ago' },
-    { id: 3, sender: { name: 'Emily White', initials: 'EW' }, message: 'Welcome to the team, Alex! So excited to have you on board.', timestamp: '1 day ago' }
-  ];
+// --- 1. IMPORT YOUR REAL MODAL ---
+import CreateShoutoutModal from '../components/shoutout/CreateShoutoutModal.jsx';
+// ---------------------------------
 
-  const initialLeaderboard = [
-    { id: 1, name: 'Jane Doe', initials: 'JD', score: 125 },
-    { id: 2, name: 'John Smith', initials: 'JS', score: 98 },
-    { id: 3, name: 'Peter Jones', initials: 'PJ', score: 76 },
-    { id: 4, name: 'Emily White', initials: 'EW', score: 64 },
-  ];
 
-  const [feedItems, setFeedItems] = useState(initialFeedItems);
-  const [leaderboard] = useState(initialLeaderboard);
-  const [newShoutout, setNewShoutout] = useState('');
+export default function DashboardPage() {
+  const [activeTab, setActiveTab] = useState('feed');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const handlePostShoutout = () => {
-    if (newShoutout.trim() === '') return;
-    const newPost = {
-      id: Date.now(),
-      sender: { name: 'Alex Ray', initials: 'AR' },
-      message: newShoutout,
-      timestamp: 'Just now',
+  // --- Data States ---
+  const [loading, setLoading] = useState(true);
+  const [shoutouts, setShoutouts] = useState([]);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [insights, setInsights] = useState(null);
+  
+  // --- 2. Add state to refresh feed ---
+  const [refreshFeed, setRefreshFeed] = useState(false);
+
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  // --- Data Fetching Effect ---
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (activeTab === 'feed') {
+          const res = await getShoutouts();
+          setShoutouts(res.data);
+          setRefreshFeed(false); // Reset refresh trigger
+        } else if (activeTab === 'leaderboard') {
+          const res = await getLeaderboard();
+          setLeaderboard(res.data);
+        } else if (activeTab === 'departments') {
+          const res = await getDepartmentHighlights();
+          setDepartments(res.data);
+        } else if (activeTab === 'admin') {
+          const res = await getAdminInsights();
+          setInsights(res.data);
+        }
+      } catch (error) {
+        console.error(`Failed to load data for tab ${activeTab}:`, error);
+      } finally {
+        setLoading(false);
+      }
     };
-    setFeedItems([newPost, ...feedItems]);
-    setNewShoutout('');
+
+    // 3. Trigger data load on activeTab OR refreshFeed change
+    if (['feed', 'leaderboard', 'departments', 'admin'].includes(activeTab) || refreshFeed) {
+      loadData();
+    } else {
+      setLoading(false);
+    }
+
+    if (activeTab === 'create') {
+      setShowCreateModal(true);
+      setActiveTab('feed'); // Reset tab to feed after opening modal
+    }
+
+  }, [activeTab, refreshFeed]); // <-- 4. Add refreshFeed to dependency array
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+  
+  // --- 5. Add handler to refresh feed after creation ---
+  const handleShoutoutCreated = () => {
+    setShowCreateModal(false); // Close the modal
+    setActiveTab('feed'); // Switch to the feed
+    setRefreshFeed(true); // Trigger a refresh
   };
 
+  // --- Navigation Item Component ---
+  const NavItem = ({ label, value, icon: Icon, onClick }) => (
+    <button
+      onClick={onClick || (() => setActiveTab(value))}
+      className={`flex items-center gap-2 p-3 rounded-lg w-full text-left transition ${
+        activeTab === value ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-indigo-100'
+      }`}
+    >
+      <Icon size={18} /> {label}
+    </button>
+  );
+
   return (
-    <>
-      <header className="dashboard-header">
-        <h1 className="header-title">BragBoard</h1>
-        <div className="user-profile-avatar">AR</div>
-      </header>
-
-      <div className="dashboard-grid">
-        <aside className="dashboard-sidebar">
-          <nav className="sidebar-menu">
-            <a href="#" className="sidebar-link bg-violet-100">
-              <svg className="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.125 1.125 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h7.5" /></svg>
-              Home
-            </a>
-            <a href="#" className="sidebar-link">
-              <svg className="sidebar-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-              Profile
-            </a>
+    <div className="flex min-h-screen bg-gray-50 text-gray-800">
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r shadow-md p-4 flex flex-col justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-indigo-600 mb-6">🏆 BragBoard</h2>
+          <nav className="space-y-2">
+            <NavItem label="Feed" value="feed" icon={MessageCircle} />
+            <NavItem label="Leaderboard" value="leaderboard" icon={BarChart3} />
+            <NavItem label="Departments" value="departments" icon={User} />
+            <NavItem label="Admin Insights" value="admin" icon={BarChart3} />
+            <NavItem label="Create Shout-out" value="create" icon={PlusSquare} />
           </nav>
-        </aside>
+        </div>
+        <div className="border-t pt-4 space-y-2">
+          <NavItem label="My Shout-outs" value="myshoutouts" icon={MessageCircle} />
+          <NavItem label="Profile" value="profile" icon={User} />
+          <NavItem label="Settings" value="settings" icon={Settings} />
+          <NavItem label="Logout" value="logout" icon={LogOut} onClick={handleLogout} />
+        </div>
+      </aside>
 
-        <main className="main-feed">
-          <div className="create-post-card">
-            <textarea 
-              className="create-post-input" 
-              rows="3" 
-              placeholder="Write a shout-out..."
-              value={newShoutout}
-              onChange={(e) => setNewShoutout(e.target.value)}
-            ></textarea>
-            <div style={{display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem'}}>
-              <button 
-                className="auth-button" 
-                style={{ width: 'auto', padding: '0.5rem 1.5rem' }}
-                onClick={handlePostShoutout}
-                disabled={!newShoutout.trim()}
-              >
-                Post
-              </button>
-            </div>
-          </div>
-          
-          <div className="shoutout-feed">
-            {feedItems.map((item) => (
-              <div key={item.id} className="shoutout-card">
-                <div className="card-header">
-                  <div className="avatar">{item.sender.initials}</div>
-                  <div>
-                    <p className="sender-name">{item.sender.name}</p>
-                    <p className="timestamp">{item.timestamp}</p>
-                  </div>
-                </div>
-                <p className="card-body">{item.message}</p>
-                <div className="card-footer">
-                  <span className="footer-action">👍 Like</span>
-                  <span className="footer-action">💬 Comment</span>
-                </div>
+      {/* Main Content */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <Tabs value={activeTab}>
+            {/* FEED TAB */}
+            <TabsContent value="feed">
+              <h1 className="text-2xl font-bold mb-4">Recent Shout-outs 🎉</h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {shoutouts.map((post) => (
+                  <Card key={post.id} className="shadow-md hover:shadow-lg transition">
+                    <CardHeader>
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarFallback>{post.sender.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold">{post.sender.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            Appreciating {post.recipients.map(r => r.name).join(', ')}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="mb-3">{post.message}</p>
+                      <div className="flex items-center space-x-4 text-gray-600">
+                        <span>👍 {post.reactions.like || 0}</span>
+                        <span>👏 {post.reactions.clap || 0}</span>
+                        <span>⭐ {post.reactions.star || 0}</span>
+                        <span className="ml-auto flex items-center space-x-1">
+                          <MessageCircle size={16} /> <span>{post.comment_count || 0}</span>
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            ))}
-          </div>
-        </main>
+            </TabsContent>
 
-        <aside className="right-sidebar">
-          <div className="leaderboard-card">
-            <h3 className="leaderboard-title">Leaderboard</h3>
-            <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
-              {leaderboard.map((user, index) => (
-                <div key={user.id} className="leaderboard-item">
-                  <span className="leaderboard-rank">{index + 1}</span>
-                  <div className="avatar" style={{width: '2.5rem', height: '2.5rem', marginRight: '0.75rem', fontSize: '1rem'}}>{user.initials}</div>
-                  <span style={{fontWeight: 500, color: '#334155', flexGrow: 1}}>{user.name}</span>
-                  <span style={{marginLeft: 'auto', fontWeight: 'bold', color: '#64748b'}}>{user.score}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-      </div>
-    </>
+            {/* LEADERBOARD TAB */}
+            <TabsContent value="leaderboard">
+              <h1 className="text-2xl font-bold mb-4">Top Contributors 🏅</h1>
+              <Card className="p-4 shadow-md overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-indigo-100 text-left">
+                      <th className="p-2">Rank</th>
+                      <th className="p-2">Employee</th>
+                      <th className="p-2">Shout-outs Sent</th>
+                      <th className="p-2">Shout-outs Received</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((user) => (
+                      <tr key={user.rank} className="border-b hover:bg-gray-50">
+                        <td className="p-2 font-medium">{user.rank}</td>
+                        <td className="p-2 font-medium">{user.name}</td>
+                        <td className="p-2">{user.sent}</td>
+                        <td className="p-2">{user.received}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+            </TabsContent>
+
+            {/* DEPARTMENTS TAB */}
+            <TabsContent value="departments">
+              <h1 className="text-2xl font-bold mb-4">Department Highlights 💼</h1>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {departments.map((d) => (
+                  <Card key={d.department} className="p-4 text-center">
+                    <h3 className="text-xl font-bold mb-2">🚀 {d.department}</h3>
+                    <p className="text-gray-600">{d.count} shout-outs this month</p>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* ADMIN TAB */}
+            <TabsContent value="admin">
+              <h1 className="text-2xl font-bold mb-4">Admin Insights 🔍</h1>
+              {insights ? (
+                <Card className="p-4 shadow-md">
+                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                    <li>Total Posts: {insights.total_posts}</li>
+                    <li>Total Users: {insights.total_users}</li>
+                    <li>Top 3 Tagged Users: {insights.top_tagged_users.join(', ')}</li>
+                  </ul>
+                  <div className="flex space-x-3 mt-4">
+                    <Button>Download CSV</Button>
+                    <Button variant="outline">View Activity Logs</Button>
+                  </div>
+                </Card>
+              ) : (
+                <p>No admin insights available.</p>
+              )}
+            </TabsContent>
+            
+            {/* Add blank tabs for the others so it doesn't crash */}
+            <TabsContent value="myshoutouts"><h1 className="text-2xl font-bold mb-4">My Shout-outs</h1></TabsContent>
+            <TabsContent value="profile"><h1 className="text-2xl font-bold mb-4">My Profile</h1></TabsContent>
+            <TabsContent value="settings"><h1 className="text-2xl font-bold mb-4">Settings</h1></TabsContent>
+            
+          </Tabs>
+        )}
+        
+        <footer className="mt-10 text-center text-gray-500 text-sm">
+          <p>“Recognition is the spark that fuels excellence.” ✨</p>
+          <p>Keep appreciating. Keep inspiring. 💪</p>
+        </footer>
+      </main>
+
+      {/* --- 6. Render the REAL modal with correct props --- */}
+      {showCreateModal && (
+        <CreateShoutoutModal 
+          onClose={() => setShowCreateModal(false)} 
+          onShoutoutCreated={handleShoutoutCreated}
+        />
+      )}
+    </div>
   );
 }
-
-export default DashboardPage;

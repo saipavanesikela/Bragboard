@@ -1,26 +1,53 @@
+# In: backend/app/core/security.py
+# (REPLACE the entire file with this)
+
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from passlib.context import CryptContext
 from jose import JWTError, jwt
-import bcrypt # 1. Import bcrypt
 from app.core.config import settings
 
-SECRET_KEY = settings.SECRET_KEY
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+# Password Hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 2. Re-write the password functions to use the bcrypt library
+def _truncate_password_to_bytes(password: str) -> bytes:
+    """
+    Encodes password to bytes and truncates at 72 bytes (bcrypt limit).
+    This is the format passlib's hash/verify functions expect.
+    """
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        return password_bytes[:72]
+    return password_bytes
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    """
+    Verifies a plain password against a hash, applying 72-byte
+    truncation.
+    """
+    truncated_password_bytes = _truncate_password_to_bytes(plain_password)
+    try:
+        # Pass bytes directly to verify
+        return pwd_context.verify(truncated_password_bytes, hashed_password)
+    except Exception:
+        # Catch any errors during verification (e.g., hash mismatch)
+        return False
 
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+def get_password_hash(password: str) -> str:
+    """
+    Hashes a password, applying 72-byte truncation.
+    """
+    truncated_password_bytes = _truncate_password_to_bytes(password)
+    # Pass bytes directly to hash
+    return pwd_context.hash(truncated_password_bytes)
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+# JWT Token Creation
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt

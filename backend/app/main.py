@@ -1,8 +1,18 @@
+# In: backend/app/main.py
+# (REPLACE the entire file)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.base import Base
 from app.db.session import engine
 from app.api.v1.api import api_router
+
+# --- ADD THIS IMPORT ---
+# This line is crucial. It imports app/models/__init__.py,
+# which in turn imports your User and Shoutout models.
+# This "registers" them with the 'Base' so create_all() knows about them.
+from app import models
+# ---------------------
 
 # This creates your database tables if they don't exist
 Base.metadata.create_all(bind=engine)

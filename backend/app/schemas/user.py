@@ -1,30 +1,28 @@
-from pydantic import BaseModel, EmailStr
+# In: backend/app/schemas/user.py
+
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional
-from datetime import datetime
-import enum # 1. Import the enum module
 
-# 2. Define UserRole as a standard Python Enum
-class UserRole(str, enum.Enum):
-    employee = "employee"
-    admin = "admin"
-
-# Schema for receiving user registration data
-
-
-# Schema for returning user data to the client (without the password)
-class UserOut(BaseModel):
-    id: int
-    name: str
+# Base properties shared by all User schemas
+class UserBase(BaseModel):
     email: EmailStr
-    department: Optional[str]
-    role: UserRole # 3. Use the UserRole Enum as the type
-    joined_at: datetime
-
-    class  Config:
-        from_attributes = True
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
+    full_name: str
     department: Optional[str] = None
-    role: Optional[str] = "employee" # Add this line
+
+# Properties to receive via API on creation
+class UserCreate(UserBase):
+    password: str
+
+# Properties to return via API (e.g., in a "user out" response)
+# Notice it doesn't include the password
+class UserOut(UserBase):
+    id: int
+    is_active: bool = True
+    is_superuser: bool = False
+    
+    model_config = ConfigDict(from_attributes=True)
+
+# Properties stored in DB
+# This is the main schema we'll use for relationships
+class User(UserOut):
+    pass  # Inherits all fields from UserOut

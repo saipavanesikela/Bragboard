@@ -1,32 +1,67 @@
-const API_URL = 'http://127.0.0.1:8000';
+import axios from 'axios';
 
-export const registerUser = async (userData) => {
-  const response = await fetch(`${API_URL}/api/v1/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(userData),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || 'Registration failed');
+// This is the main axios instance for your app
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:8000/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// This interceptor adds the auth token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
-  return await response.json();
+  return config;
+});
+
+export default api;
+
+// --- Authentication Functions ---
+
+export const loginUser = (credentials) => {
+  return api.post('/auth/token', new URLSearchParams(credentials), {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
 };
 
-export const loginUser = async (email, password) => {
-  const formData = new URLSearchParams();
-  formData.append('username', email);
-  formData.append('password', password);
+export const registerUser = (userData) => {
+  return api.post('/auth/register', userData);
+};
 
-  const response = await fetch(`${API_URL}/api/v1/auth/login/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData.toString(),
-  });
+export const getCurrentUser = () => {
+    return api.get('/users/me');
+};
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.detail || 'Login failed');
+
+// --- Dashboard & Shoutout Functions ---
+
+export const getShoutouts = (department = null) => {
+  const params = {};
+  if (department) {
+    params.department = department;
   }
-  return await response.json();
+  return api.get('/shoutouts/', { params });
+};
+
+// --- THIS IS THE NEW FUNCTION ---
+export const createShoutout = (shoutoutData) => {
+  return api.post('/shoutouts/', shoutoutData);
+};
+// --------------------------------
+
+export const getAdminInsights = () => {
+  return api.get('/analytics/insights');
+};
+
+export const getLeaderboard = () => {
+  return api.get('/analytics/leaderboard');
+};
+
+export const getDepartmentHighlights = () => {
+  return api.get('/analytics/departments');
 };

@@ -1,12 +1,19 @@
+# In: backend/app/schemas/analytics.py
+
 from pydantic import BaseModel
-from .user import UserOut
+from typing import List
 
-class UserStats(BaseModel):
-    shoutouts_sent: int
-    shoutouts_received: int
-    reactions_given: int
-    comments_posted: int
+class LeaderboardEntry(BaseModel):
+    rank: int
+    name: str
+    sent: int
+    received: int
 
-class LeaderboardUser(BaseModel):
-    user: UserOut
-    score: int
+class DepartmentHighlight(BaseModel):
+    department: str
+    count: int
+
+class AdminInsights(BaseModel):
+    total_posts: int
+    total_users: int
+    top_tagged_users: List[str]
