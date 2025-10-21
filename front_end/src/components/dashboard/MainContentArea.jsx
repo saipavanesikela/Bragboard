@@ -1,37 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getShoutouts } from '../../api/apiService.js';
+import ShoutoutCard from '../shoutout/ShoutoutCard.jsx';
 
 function MainContentArea() {
+  const [shoutouts, setShoutouts] = useState([]);
+  const [stats, setStats] = useState({ sent: 0, received: 0, reactions: 0, comments: 0 });
+
+  const fetchShoutouts = async () => {
+    try {
+      const data = await getShoutouts();
+      setShoutouts(data);
+    } catch (err) {
+      // keep console logging for debugging, don't render placeholder UI
+      console.error('Failed fetching shoutouts:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchShoutouts();
+    // We will fetch stats and leaderboard data here later
+  }, []);
+
+  const handleCreateShoutout = async (shoutoutData) => {
+    // Create behavior is handled by DashboardLayout's modal; keep placeholder for future wiring.
+    console.log('Submitting shoutout (placeholder):', shoutoutData);
+  };
+
   return (
     <main className="main-content">
-      {/* Welcome Header */}
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold text-slate-800">Welcome back, User 👋</h2>
-        <p className="text-slate-500">Here's what's happening in your team today.</p>
-      </div>
-
-      {/* Quick Stats Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="stat-card">
-          <p className="text-sm text-slate-500">Shout-outs Sent</p>
-          <p className="text-2xl font-bold">12</p>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-slate-500">Received</p>
-          <p className="text-2xl font-bold">8</p>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-slate-500">Reactions Given</p>
-          <p className="text-2xl font-bold">45</p>
-        </div>
-        <div className="stat-card">
-          <p className="text-sm text-slate-500">Comments</p>
-          <p className="text-2xl font-bold">21</p>
-        </div>
-      </div>
-      
-      {/* Main Feed */}
-      <div className="shoutout-card">
-        <p>The main shout-out feed will go here.</p>
+      <div className="space-y-6">
+        {shoutouts.length > 0 && shoutouts.map((item) => (
+          <ShoutoutCard key={item.id} shoutout={item} onUpdate={fetchShoutouts} />
+        ))}
       </div>
     </main>
   );

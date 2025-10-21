@@ -6,7 +6,11 @@ from .user import User  # Import the User schema
 # Properties to receive via API on creation
 class ShoutoutCreate(BaseModel):
     message: str
-    recipient_ids: List[int]
+    recipient_ids: List[int] | None = None
+    # If is_all is true the shoutout will be sent to all users
+    is_all: bool | None = False
+    # Optionally target a single department by name (e.g., "Engineering")
+    department: str | None = None
 
 # Properties to return to client
 class Shoutout(BaseModel):

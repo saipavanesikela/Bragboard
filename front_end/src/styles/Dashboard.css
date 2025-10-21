@@ -7,6 +7,37 @@
   font-family: "Inter", sans-serif;
 }
 
+/* Grid wrapper when using DashboardLayout to position sidebar, topnav and main content */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "sidebar topnav"
+    "sidebar main";
+  width: 100%;
+  min-height: 100vh;
+}
+
+.dashboard-grid > aside.sidebar {
+  grid-area: sidebar;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.dashboard-grid > .top-navbar {
+  grid-area: topnav;
+  align-self: start;
+  padding: 1rem 1.5rem;
+}
+
+.dashboard-grid > .main-content,
+.dashboard-grid > main {
+  grid-area: main;
+  padding: 2rem;
+}
+
 /* === SIDEBAR === */
 .sidebar {
   width: 260px;
@@ -73,6 +104,46 @@
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+}
+
+/* Container inside the dashboard grid that holds the current page content and any in-main modals */
+.main-slot {
+  grid-area: main;
+  padding: 2rem;
+  position: relative;
+}
+
+/* Modal styles that center in the .main-slot rather than the whole viewport */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4); /* translucent backdrop */
+  z-index: 40;
+}
+
+.modal-content {
+  width: min(720px, 95%);
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.2);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.create-post-input {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.75rem;
+  resize: vertical;
 }
 
 .main-content h1 {

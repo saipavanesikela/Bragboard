@@ -29,6 +29,8 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:3000",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
     # Add other local dev origins here as needed
 ]
 
@@ -43,6 +45,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Log the configured CORS origins for easier debugging when dev clients hit preflight errors
+import socket
+try:
+    host = socket.gethostname()
+except Exception:
+    host = 'localhost'
+logging.info('CORS allow_origins=%s (dev_allow_all=%s) host=%s', allowed, dev_allow_all, host)
 
 # Include your API router
 app.include_router(api_router, prefix="/api/v1")

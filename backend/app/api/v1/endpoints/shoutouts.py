@@ -1,36 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
-from app import crud, models, schemas
+# Corrected, specific imports
+from app.crud import crud_shoutout
+from app.models.user import User
+from app.schemas.shoutout import Shoutout, ShoutoutCreate
 from app.db.session import get_db
-from app.api import deps
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
-@router.post("/", response_model=schemas.Shoutout)
-def create_shoutout(
-    shoutout: schemas.ShoutoutCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(deps.get_current_user),
-):
-    """
-    Create a new shoutout.
-    """
-    return crud.crud_shoutout.create_shoutout(
-        db=db, shoutout=shoutout, sender_id=current_user.id
-    )
-
-@router.get("/", response_model=List[schemas.Shoutout])
+@router.get("/", response_model=List[Shoutout])
 def read_shoutouts(
-    skip: int = 0,
-    limit: int = 100,
+    db: Session = Depends(get_db), 
+    skip: int = 0, 
+    limit: int = 100, 
+    department: Optional[str] = None
+):
+    shoutouts = crud_shoutout.get_shoutouts(db, skip=skip, limit=limit, department=department)
+    return shoutouts
+
+@router.post("/", response_model=Shoutout)
+def create_new_shoutout(
+    shoutout: ShoutoutCreate,
     db: Session = Depends(get_db),
-    # This endpoint is protected, uncomment if you want it public
-    # current_user: models.User = Depends(deps.get_current_user), 
+    current_user: User = Depends(get_current_user)
+):
+    return crud_shoutout.create_shoutout(db=db, shoutout=shoutout, sender_id=current_user.id)
+@router.get("/me", response_model=List[Shoutout])
+def read_my_shoutouts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Retrieve all shoutouts.
+    Get all shout-outs sent by the current logged-in user.
     """
-    shoutouts = crud.crud_shoutout.get_shoutouts(db, skip=skip, limit=limit)
-    return shoutouts
+    return crud_shoutout.get_shoutouts_by_sender(db=db, sender_id=current_user.id)

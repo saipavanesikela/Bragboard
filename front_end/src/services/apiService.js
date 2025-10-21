@@ -21,7 +21,27 @@ export default api;
 
 // --- AUTHENTICATION ---
 export const loginUser = (credentials) => {
-  return api.post('/auth/token', new URLSearchParams(credentials), {
+  // Accept either an object { username, password } or (email, password)
+  let params;
+  if (credentials instanceof URLSearchParams) {
+    params = credentials;
+  } else if (typeof credentials === 'object' && credentials !== null) {
+    params = new URLSearchParams();
+    // If caller used email instead of username, prefer username then email
+    const user = credentials.username ?? credentials.email ?? credentials.emailAddress;
+    const pwd = credentials.password ?? credentials.pass;
+    params.append('username', user || '');
+    params.append('password', pwd || '');
+  } else if (Array.isArray(arguments) && arguments.length >= 2) {
+    params = new URLSearchParams();
+    params.append('username', arguments[0]);
+    params.append('password', arguments[1]);
+  } else {
+    throw new Error('Invalid credentials passed to loginUser');
+  }
+
+  // axios will encode URLSearchParams correctly when passed directly
+  return api.post('/auth/token', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
